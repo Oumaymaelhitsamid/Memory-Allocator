@@ -15,17 +15,61 @@ unsigned long knuth_mmix_one_round(unsigned long in)
     return in * 6364136223846793005UL % 1442695040888963407UL;
 }
 
-void *mark_memarea_and_get_user_ptr(void *ptr, unsigned long size, MemKind k)
-{
-    /* ecrire votre code ici */
-    return (void *)0;
+void *mark_memarea_and_get_user_ptr(void* ptr, unsigned long size, MemKind k) {
+
+    unsigned long* tmp_ptr = ptr; // COmme c'est un long*, on avancera bien de 8 octets avec ++
+    long magic = (knuth_mmix_one_round((unsigned long) ptr) & ~(0x3)) | k;
+
+    // On écrit les bornes au début
+    *tmp_ptr = size;
+    tmp_ptr++;
+    *tmp_ptr = magic;
+    tmp_ptr++;
+
+    // On passe la taille du bloc
+    tmp_ptr = (unsigned long*) (((char*) tmp_ptr) + (size - 32));
+
+    // On écrit les bornes à la fin
+    *tmp_ptr = magic;
+    tmp_ptr++;
+    *tmp_ptr = size;
+
+    return ptr + 16; // Comme c'est un void*, on avance réellement de 1 octet par ++
 }
 
-Alloc
-mark_check_and_get_alloc(void *ptr)
-{
-    /* ecrire votre code ici */
+Alloc mark_check_and_get_alloc(void *ptr) {
+    
     Alloc a = {};
+
+    unsigned long* tmp_ptr = ptr;
+    tmp_ptr -= 2;
+
+    // On récupère les bornes
+    a.ptr = (void*) tmp_ptr;
+    a.size = *tmp_ptr;
+    tmp_ptr++;
+
+    long magic = *tmp_ptr;
+    a.kind = magic & 0x3UL;
+    tmp_ptr++;
+
+    // Verification de la cohérence de la valeur magique
+    long expected_magic = (knuth_mmix_one_round((unsigned long) a.ptr) & ~(0x3)) | a.kind;
+    assert(magic == expected_magic);
+
+    // On vérifie que la taille du bloc correspond 
+    assert(!(a.size >= LARGEALLOC && a.kind != LARGE_KIND));   // Le bloc est trop petit pour la taille voulue
+    assert(!(a.size <= SMALLALLOC && a.kind != SMALL_KIND));   // Le bloc est trop grand pour la taille voulue
+
+    // On vérifie la cohérence des bornes avec celles à la fin du bloc
+    tmp_ptr = (unsigned long*) (((char*) tmp_ptr) + (a.size - 32));
+    long magic_end = *tmp_ptr;
+    tmp_ptr++;
+    long size_end = *tmp_ptr;
+
+    assert(magic == magic_end);     // Les bornes magic ne correspondent pas
+    assert(a.size == size_end);     // Les bornes taille ne correspondent pas
+
     return a;
 }
 

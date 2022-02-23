@@ -32,22 +32,19 @@ void allocat::doAlloc()
     adr = emalloc (size);
 
 
-    if ( adr == (char *)0 )
-    {
-	/* l'allocation a echoue */
-	printf ("Une allocation de %d a echoue !\n", size );
-      
-	adr = nullptr;
-    }
-    else
-    {
-	idx = nb;
-	nb ++;
-	if (be_verbose)
-	    printf ("alloc %d (taille: %d): %p\n", idx, size, adr);
-      
-	/* ecrire dans le bloc */
-	memset (adr, 0, size );
+    if ( adr == (char *)0 ) {
+        /* l'allocation a echoue */
+        printf ("Une allocation de %d a echoue !\n", size );
+        
+        adr = nullptr;
+    } else {
+        idx = nb;
+        nb ++;
+        if (be_verbose)
+            printf ("alloc %d (taille: %d): %p\n", idx, size, adr);
+        
+        /* ecrire dans le bloc */
+        memset (adr, 0, size );
     }
   
   
