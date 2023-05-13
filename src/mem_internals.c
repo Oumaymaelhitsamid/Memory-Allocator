@@ -90,8 +90,7 @@ mem_realloc_small() {
     return size;
 }
 
-unsigned long
-mem_realloc_medium() {
+unsigned long mem_realloc_medium() {
     uint32_t indice = FIRST_ALLOC_MEDIUM_EXPOSANT + arena.medium_next_exponant;
     assert(arena.TZL[indice] == 0);
     unsigned long size = (FIRST_ALLOC_MEDIUM << arena.medium_next_exponant);
